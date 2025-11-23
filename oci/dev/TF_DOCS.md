@@ -35,7 +35,7 @@ No inputs.
 
 | Name | Description |
 |------|-------------|
-| <a name="output_connection_strings"></a> [connection\_strings](#output\_connection\_strings) | n/a |
+| <a name="output_connection_strings"></a> [connection\_strings](#output\_connection\_strings) | Connection Strings for connecting to the instances. |
 ## Dependency Graph
 
 ![Dependency Graph](./tf_graph.png)

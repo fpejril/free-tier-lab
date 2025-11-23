@@ -1,3 +1,5 @@
+REPO_ROOT := $(shell git rev-parse --show-toplevel)
+TFLINT_CONFIG = $(REPO_ROOT)/.tflint.hcl
 PLAN_FILE = tfplan
 DOCS_FILE = TF_DOCS.md
 GRAPH_EXT = png
@@ -39,7 +41,7 @@ fmt:
 	@terraform fmt
 
 lint:
-	@tflint || true
+	@tflint --config $(TFLINT_CONFIG) || true
 
 clean:
 	@rm -rf .terraform $(PLAN_FILE)
