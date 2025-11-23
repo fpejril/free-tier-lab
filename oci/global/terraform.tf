@@ -12,7 +12,7 @@ terraform {
   backend "oci" {
     bucket    = "tf-states"
     namespace = "axyllwfaj136"
-    key       = "dev.tfstate"
+    key       = "global.tfstate"
   }
 }
 

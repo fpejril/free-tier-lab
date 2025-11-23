@@ -38,4 +38,4 @@ No inputs.
 | <a name="output_connection_strings"></a> [connection\_strings](#output\_connection\_strings) | Connection Strings for connecting to the instances. |
 ## Dependency Graph
 
-![Dependency Graph](./tf_graph.png)
+![Dependency Graph](./tf_graph.svg)

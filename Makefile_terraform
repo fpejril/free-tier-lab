@@ -2,7 +2,7 @@ REPO_ROOT := $(shell git rev-parse --show-toplevel)
 TFLINT_CONFIG = $(REPO_ROOT)/.tflint.hcl
 PLAN_FILE = tfplan
 DOCS_FILE = TF_DOCS.md
-GRAPH_EXT = png
+GRAPH_EXT = svg
 GRAPH_FILE = tf_graph.$(GRAPH_EXT)
 
 .PHONY: all
