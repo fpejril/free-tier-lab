@@ -9,9 +9,9 @@ data "oci_core_images" "ubuntu" {
   sort_order               = "DESC"
   state                    = "AVAILABLE"
   filter {
-    name = "display_name"
+    name   = "display_name"
     values = ["Canonical-Ubuntu-24.04-aarch64.*"]
-    regex = true
+    regex  = true
   }
 }
 

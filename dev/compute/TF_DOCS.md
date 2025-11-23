@@ -1,4 +1,4 @@
-# compute
+# compute - Terraform Docs
 
 ## Requirements
 
@@ -17,13 +17,13 @@
 
 | Name | Source | Version |
 |------|--------|---------|
+| <a name="module_instance"></a> [instance](#module\_instance) | ../../modules/oci/instance | n/a |
 | <a name="module_vcn"></a> [vcn](#module\_vcn) | ../../modules/oci/vcn | n/a |
 
 ## Resources
 
 | Name | Type |
 |------|------|
-| [oci_core_instance.test_instance](https://registry.terraform.io/providers/oracle/oci/latest/docs/resources/core_instance) | resource |
 | [oci_core_images.ubuntu](https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/core_images) | data source |
 | [oci_identity_availability_domains.ads](https://registry.terraform.io/providers/oracle/oci/latest/docs/data-sources/identity_availability_domains) | data source |
 
@@ -36,6 +36,6 @@ No inputs.
 | Name | Description |
 |------|-------------|
 | <a name="output_connection_strings"></a> [connection\_strings](#output\_connection\_strings) | n/a |
-
 ## Dependency Graph
-![Dependency Graph](./graph.png)
+
+![Dependency Graph](./.terraform)

@@ -1,5 +1,5 @@
 variable "compartment_id" {
-  description = "OCI Compartment ID for the VCN."
+  description = "OCID for the VCN Compartment."
   type        = string
 }
 

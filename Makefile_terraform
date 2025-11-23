@@ -1,0 +1,54 @@
+PLAN_FILE = tfplan
+DOCS_FILE = TF_DOCS.md
+GRAPH_EXT = png
+GRAPH_FILE = tf_graph.$(GRAPH_EXT)
+
+.PHONY: all
+all: validate fmt lint $(DOCS_FILE) $(PLAN_FILE)
+
+.PRECIOUS: $(PLAN_FILE)
+$(PLAN_FILE): .terraform $(wildcard *.tf)
+	@terraform plan -out=$@
+
+.terraform:
+	@terraform init -upgrade
+
+$(DOCS_FILE): .terraform $(GRAPH_FILE) $(wildcard *.tf)
+	@echo "# $$(basename "$$(PWD)") - Terraform Docs" >$@
+	@echo "" >>$@
+	@terraform-docs markdown table . >>$@
+	@echo "## Dependency Graph" >>$@
+	@echo "" >>$@
+	@echo "![Dependency Graph](./$<)" >>$@
+
+docs: $(DOCS_FILE)
+
+$(GRAPH_FILE): .terraform $(wildcard *.tf)
+	@terraform graph | dot -T$(GRAPH_EXT) >$@
+
+generated.tf: .terraform imports.tf
+	terraform plan -generate-config-out=$@
+
+imports: generated.tf
+
+.PHONY: validate fmt lint clean clean-docs refresh-docs show apply
+validate: .terraform
+	@terraform validate
+
+fmt:
+	@terraform fmt
+
+lint:
+	@tflint || true
+
+clean:
+	@rm -rf .terraform $(PLAN_FILE)
+
+clean-docs:
+	@rm -f $(DOCS_FILE) $(GRAPH_FILE)
+
+show: $(PLAN_FILE)
+	@terraform show $(PLAN_FILE)
+
+apply: $(PLAN_FILE)
+	terraform $@ $<
