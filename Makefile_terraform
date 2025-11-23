@@ -13,7 +13,7 @@ $(PLAN_FILE): .terraform $(wildcard *.tf)
 .terraform:
 	@terraform init -upgrade
 
-$(DOCS_FILE): .terraform $(GRAPH_FILE) $(wildcard *.tf)
+$(DOCS_FILE): $(GRAPH_FILE)
 	@echo "# $$(basename "$$(PWD)") - Terraform Docs" >$@
 	@echo "" >>$@
 	@terraform-docs markdown table . >>$@

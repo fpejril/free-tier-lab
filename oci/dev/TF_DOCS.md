@@ -1,4 +1,4 @@
-# compute - Terraform Docs
+# dev - Terraform Docs
 
 ## Requirements
 
@@ -38,4 +38,4 @@ No inputs.
 | <a name="output_connection_strings"></a> [connection\_strings](#output\_connection\_strings) | n/a |
 ## Dependency Graph
 
-![Dependency Graph](./.terraform)
+![Dependency Graph](./tf_graph.png)
