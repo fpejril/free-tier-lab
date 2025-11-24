@@ -1,32 +1,37 @@
 name: "Terraform"
+
 on:
   push:
-    branches:
-      - main
-      - fpejril-patch-1
   pull_request:
+
 permissions:
   contents: read
+
 jobs:
   terraform:
     name: Terraform - ${{ matrix.module }}
     runs-on: ubuntu-latest
     environment: development
+
     strategy:
       matrix:
         module:
           - oci/dev
           - oci/global
+
     defaults:
       run:
         shell: bash
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        # with:
-        #   version: "1.14.0"
+        with:
+          version: "1.14.0"
+
       - name: Configure OCI profile
         run: |
           mkdir -p "${HOME}/.oci"
@@ -40,15 +45,19 @@ jobs:
           } > "${HOME}/.oci/config"
           printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > "${HOME}/.oci/oci_api_key.pem"
           chmod 600 "${HOME}/.oci/oci_api_key.pem" "${HOME}/.oci/config"
+
       - name: Terraform Init
         working-directory: ${{ matrix.module }}
         run: terraform init
+
       - name: Terraform Format
         working-directory: ${{ matrix.module }}
         run: terraform fmt -check
+
       - name: Terraform Plan
         working-directory: ${{ matrix.module }}
         run: terraform plan -input=false
+
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: ${{ matrix.module }}
