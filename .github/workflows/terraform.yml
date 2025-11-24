@@ -117,7 +117,7 @@ jobs:
           fi
 
           any=false
-          matrix_json="["
+          matrix_json="{\"include\":["
           first=true
           declare -A module_path_map=(
             ["oci-dev"]="oci/dev"
@@ -145,7 +145,7 @@ jobs:
             fi
           done
           echo "any_changes=$any" >> "$GITHUB_OUTPUT"
-          matrix_json="${matrix_json}]"
+          matrix_json="${matrix_json}]}"
           echo "apply_matrix=$matrix_json" >> "$GITHUB_OUTPUT"
 
   terraform-apply:
