@@ -13,7 +13,7 @@ module "vcn" {
 #-------------------#
 module "instance" {
   source              = "../../modules/oci/instance"
-  count               = 4
+  count               = 5
   availability_domain = local.ad_names[1] # Only us-chicago-2 has available capacity
   ssh_public_key      = local.ssh_public_key
   compartment_id      = local.tenancy_ocid
