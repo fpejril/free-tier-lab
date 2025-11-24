@@ -31,7 +31,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          version: "1.14.0"
+          terraform_version: "1.14.0"
 
       - name: Configure OCI profile
         run: |
@@ -136,7 +136,7 @@ jobs:
     needs:
       - terraform-plan
       - plan-summary
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.plan-summary.outputs.any_changes == 'true'
+    if: github.ref == 'refs/heads/fpejril-patch-1' && github.event_name == 'push' && needs.plan-summary.outputs.any_changes == 'true'
     environment: development
 
     strategy:
@@ -161,7 +161,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          version: "1.14.0"
+          terraform_version: "1.14.0"
 
       - name: Configure OCI profile
         run: |
