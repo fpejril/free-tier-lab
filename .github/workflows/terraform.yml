@@ -94,7 +94,7 @@ jobs:
     needs: terraform-plan
     outputs:
       any_changes: ${{ steps.summary.outputs.any_changes }}
-      changes_json: ${{ steps.summary.outputs.changes_json }}
+      apply_matrix: ${{ steps.summary.outputs.apply_matrix }}
     defaults:
       run:
         shell: bash
@@ -117,8 +117,12 @@ jobs:
           fi
 
           any=false
-          json="{"
+          matrix_json="["
           first=true
+          declare -A module_path_map=(
+            ["oci-dev"]="oci/dev"
+            ["oci-global"]="oci/global"
+          )
           for file in "${files[@]}"; do
             module="${file##*/plan-status-}"
             module="${module%.txt}"
@@ -126,17 +130,23 @@ jobs:
             printf '| %s | %s |\n' "$module" "$value" >> "$GITHUB_STEP_SUMMARY"
             if [ "$value" = "true" ]; then
               any=true
-            fi
-            if [ "$first" = true ]; then
-              json="${json}\"${module}\":${value}"
-              first=false
-            else
-              json="${json},\"${module}\":${value}"
+              path="${module_path_map[$module]}"
+              if [ -z "$path" ]; then
+                echo "Unknown module key '$module' in plan status; cannot build apply matrix." >&2
+                exit 1
+              fi
+              entry="{\"module\":\"${path}\",\"plan_name\":\"${module}\"}"
+              if [ "$first" = true ]; then
+                matrix_json="${matrix_json}${entry}"
+                first=false
+              else
+                matrix_json="${matrix_json},${entry}"
+              fi
             fi
           done
-          json="${json}}"
           echo "any_changes=$any" >> "$GITHUB_OUTPUT"
-          echo "changes_json=$json" >> "$GITHUB_OUTPUT"
+          matrix_json="${matrix_json}]"
+          echo "apply_matrix=$matrix_json" >> "$GITHUB_OUTPUT"
 
   terraform-apply:
     name: Terraform Apply - ${{ matrix.module }}
@@ -149,18 +159,11 @@ jobs:
 
     strategy:
       matrix:
-        include:
-          - module: oci/dev
-            plan_name: oci-dev
-          - module: oci/global
-            plan_name: oci-global
+        ${{ fromJSON(needs.plan-summary.outputs.apply_matrix) }}
 
     defaults:
       run:
         shell: bash
-
-    env:
-      MODULE_HAS_CHANGES: ${{ fromJSON(needs.plan-summary.outputs.changes_json)[matrix.plan_name] }}
 
     steps:
       - name: Checkout
@@ -186,18 +189,15 @@ jobs:
           chmod 600 "${HOME}/.oci/oci_api_key.pem" "${HOME}/.oci/config"
 
       - name: Terraform Init
-        if: env.MODULE_HAS_CHANGES == 'true'
         working-directory: ${{ matrix.module }}
         run: terraform init
 
       - name: Download saved plan
-        if: env.MODULE_HAS_CHANGES == 'true'
         uses: actions/download-artifact@v4
         with:
           name: tfplan-${{ matrix.plan_name }}
           path: ${{ matrix.module }}
 
       - name: Terraform Apply (approved plan)
-        if: env.MODULE_HAS_CHANGES == 'true'
         working-directory: ${{ matrix.module }}
         run: terraform apply -input=false tfplan
