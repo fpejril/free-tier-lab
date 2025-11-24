@@ -16,11 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: development
     env:
-      OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
-      OCI_USER_OCID: ${{ secrets.OCI_USER_OCID }}
-      OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-      OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
-      OCI_REGION: ${{ vars.OCI_REGION }}
+      TF_VAR_auth: ApiKey
       TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
       TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
       TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
@@ -49,12 +45,8 @@ jobs:
           version: "1.14.0"
 
       # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-      - name: Check OCI env
-        run: env | sort | grep -E '^OCI_|^TF_VAR_'
       - name: Terraform Init
         working-directory: ${{ matrix.module }}
-        env:
-          TF_LOG: TRACE
         run: terraform init
 
       # Checks that all Terraform configuration files adhere to a canonical format
