@@ -15,6 +15,7 @@ jobs:
     name: Terraform - ${{ matrix.module }}
     runs-on: ubuntu-latest
     environment: development
+    # Created user terraform@frankpejril.com to manage from pipeline
     env:
       OCI_AUTH: ApiKey
       OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
