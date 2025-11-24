@@ -99,7 +99,15 @@ jobs:
         id: summary
         run: |
           set -euo pipefail
-          mapfile -t artifacts < <(find tfplans -maxdepth 1 -type f -name 'tfplan-*')
+          echo "Listing tfplans directory:" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d tfplans ]; then
+            ls -R tfplans >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "tfplans directory does not exist" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          mapfile -t artifacts < <(find tfplans -maxdepth 1 -type f -name 'tfplan-*' -print)
+          echo "Detected artifacts: ${#artifacts[@]}" >> "$GITHUB_STEP_SUMMARY"
           if [ "${#artifacts[@]}" -eq 0 ]; then
             echo "No tfplan artifacts were found; nothing to apply." >> "$GITHUB_STEP_SUMMARY"
             echo "any_changes=false" >> "$GITHUB_OUTPUT"
