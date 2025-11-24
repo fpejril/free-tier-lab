@@ -77,24 +77,6 @@ jobs:
           path: ${{ matrix.module }}/tfplan
           if-no-files-found: error
 
-      - name: Publish plan metadata
-        run: |
-          applyable="${{ steps.plan.outputs.changes }}"
-          cat <<JSON > "plan-meta-${{ matrix.plan_name }}.json"
-          {
-            "module": "${{ matrix.module }}",
-            "plan_name": "${{ matrix.plan_name }}",
-            "applyable": ${applyable:-false}
-          }
-          JSON
-
-      - name: Upload metadata artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: plan-meta-${{ matrix.plan_name }}
-          path: plan-meta-${{ matrix.plan_name }}.json
-          if-no-files-found: error
-
   plan-summary:
     name: Summarize plan results
     runs-on: ubuntu-latest
@@ -106,42 +88,52 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Download plan metadata artifacts
+      - name: Download plan artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: plan-meta-*
-          path: plan-meta
+          pattern: tfplan-*
+          path: tfplans
           merge-multiple: true
 
       - name: Summarize module change state
         id: summary
         run: |
           set -euo pipefail
-          mapfile -d '' files < <(find plan-meta -type f -name 'plan-meta-*.json' -print0)
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "No plan metadata artifacts were found; cannot determine plan summary." >&2
-            exit 1
+          shopt -s nullglob
+          artifacts=(tfplans/tfplan-*/)
+          if [ "${#artifacts[@]}" -eq 0 ]; then
+            echo "No tfplan artifacts were found; nothing to apply." >> "$GITHUB_STEP_SUMMARY"
+            echo "any_changes=false" >> "$GITHUB_OUTPUT"
+            echo 'apply_matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           any=false
           matrix_json="{\"include\":["
           first=true
-          for file in "${files[@]}"; do
-            value=$(jq -r '.applyable' "$file")
-            module=$(jq -r '.plan_name' "$file")
-            module_path=$(jq -r '.module' "$file")
-            printf '| %s | %s |\n' "$module" "$value" >> "$GITHUB_STEP_SUMMARY"
-            if [ "$value" = "true" ]; then
-              any=true
-              entry="{\"module\":\"${module_path}\",\"plan_name\":\"${module}\"}"
-              if [ "$first" = true ]; then
-                matrix_json="${matrix_json}${entry}"
-                first=false
-              else
-                matrix_json="${matrix_json},${entry}"
-              fi
+          declare -A module_path_map=(
+            ["oci-dev"]="oci/dev"
+            ["oci-global"]="oci/global"
+          )
+          for dir in "${artifacts[@]}"; do
+            name="${dir#tfplans/tfplan-}"
+            name="${name%/}"
+            path="${module_path_map[$name]}"
+            if [ -z "$path" ]; then
+              echo "Unknown plan artifact '$name'; cannot map to module path." >&2
+              exit 1
+            fi
+            any=true
+            printf '| %s | true |\n' "$name" >> "$GITHUB_STEP_SUMMARY"
+            entry="{\"module\":\"${path}\",\"plan_name\":\"${name}\"}"
+            if [ "$first" = true ]; then
+              matrix_json="${matrix_json}${entry}"
+              first=false
+            else
+              matrix_json="${matrix_json},${entry}"
             fi
           done
+
           echo "any_changes=$any" >> "$GITHUB_OUTPUT"
           matrix_json="${matrix_json}]}"
           echo "apply_matrix=$matrix_json" >> "$GITHUB_OUTPUT"
