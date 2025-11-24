@@ -1,86 +1,54 @@
 name: "Terraform"
-
 on:
   push:
     branches:
       - main
       - fpejril-patch-1
   pull_request:
-
 permissions:
   contents: read
-
 jobs:
   terraform:
     name: Terraform - ${{ matrix.module }}
     runs-on: ubuntu-latest
     environment: development
-    # Created user terraform@frankpejril.com to manage from pipeline
-    # After extensive testing, I was not able to get OCI provider authentication to work with environment variables
-    # Related: https://github.com/oracle/terraform-provider-oci/issues/1584
-    # Instead we will build the ~/.oci/config which is used by default.
-
-    env:
-      TF_VAR_auth: ApiKey
-      TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
-      TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
-      TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-      TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
-      TF_VAR_region: ${{ vars.OCI_REGION }}
     strategy:
       matrix:
         module:
           - oci/dev
           - oci/global
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
-
     steps:
-      # Checkout the repository to the GitHub Actions runner
       - name: Checkout
         uses: actions/checkout@v6
-
-      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
-        with:
-          version: "1.14.0"
-
+        # with:
+        #   version: "1.14.0"
       - name: Configure OCI profile
         run: |
           mkdir -p "${HOME}/.oci"
-          cat > "${HOME}/.oci/config" <<EOF
-          [DEFAULT]
-          user=${TF_VAR_user_ocid}
-          fingerprint=${TF_VAR_fingerprint}
-          key_file=${HOME}/.oci/oci_api_key.pem
-          tenancy=${TF_VAR_tenancy_ocid}
-          region=${TF_VAR_region}
-          EOF
-          # Store the private key material with the permissions OCI expects
-          printf '%s\n' "${TF_VAR_private_key}" > "${HOME}/.oci/oci_api_key.pem"
+          {
+            echo "[DEFAULT]"
+            echo "user=${{ secrets.OCI_USER_OCID }}"
+            echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}"
+            echo "key_file=${HOME}/.oci/oci_api_key.pem"
+            echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}"
+            echo "region=${{ vars.OCI_REGION }}"
+          } > "${HOME}/.oci/config"
+          printf '%s' "${{ secrets.OCI_PRIVATE_KEY }}" > "${HOME}/.oci/oci_api_key.pem"
           chmod 600 "${HOME}/.oci/oci_api_key.pem" "${HOME}/.oci/config"
-
-      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
       - name: Terraform Init
         working-directory: ${{ matrix.module }}
         run: terraform init
-
-      # Checks that all Terraform configuration files adhere to a canonical format
       - name: Terraform Format
         working-directory: ${{ matrix.module }}
         run: terraform fmt -check
-
-      # Generates an execution plan for Terraform
       - name: Terraform Plan
         working-directory: ${{ matrix.module }}
         run: terraform plan -input=false
-
-        # On push to "main", build or change infrastructure according to Terraform configuration files
-        # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         working-directory: ${{ matrix.module }}
