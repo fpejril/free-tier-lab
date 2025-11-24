@@ -99,8 +99,7 @@ jobs:
         id: summary
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          artifacts=(tfplans/tfplan-*/)
+          mapfile -t artifacts < <(find tfplans -maxdepth 1 -type f -name 'tfplan-*')
           if [ "${#artifacts[@]}" -eq 0 ]; then
             echo "No tfplan artifacts were found; nothing to apply." >> "$GITHUB_STEP_SUMMARY"
             echo "any_changes=false" >> "$GITHUB_OUTPUT"
@@ -115,9 +114,8 @@ jobs:
             ["oci-dev"]="oci/dev"
             ["oci-global"]="oci/global"
           )
-          for dir in "${artifacts[@]}"; do
-            name="${dir#tfplans/tfplan-}"
-            name="${name%/}"
+          for file in "${artifacts[@]}"; do
+            name="${file##*/tfplan-}"
             path="${module_path_map[$name]}"
             if [ -z "$path" ]; then
               echo "Unknown plan artifact '$name'; cannot map to module path." >&2
